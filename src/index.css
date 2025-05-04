@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Geist Sans';
+  src: url('https://assets.vercel.com/raw/upload/v1587415301/fonts/2/inter-var-latin.woff2')
+    format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  @apply bg-background text-foreground antialiased;
+  font-family: 'Geist Sans', 'Inter', sans-serif;
+}
+
+* {
+  @apply border-border;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted;
+}
+
+/* Form Elements */
+input, textarea, select {
+  @apply bg-input text-foreground border border-border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-200;
+}
+
+button {
+  @apply transition-all duration-200;
+}
+
+.card {
+  @apply bg-card rounded-lg border border-border shadow-sm p-4;
+}
+
+.animate-in {
+  @apply animate-fadeIn;
+}
+
+.slide-up {
+  @apply animate-slideUp;
+}
