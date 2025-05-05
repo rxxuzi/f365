@@ -184,7 +184,7 @@ export default function Analysis() {
 
   // Calculate day of week trends
   const dayOfWeekTrends = useMemo(() => {
-    const dayNames = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dayCounts = Array(7).fill(0);
     const dayTotals = Array(7).fill(0);
 
