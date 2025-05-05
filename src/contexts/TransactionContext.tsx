@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Transaction, BalanceSummary } from '../types';
-import { transactionsApi, mockTransactions } from '../utils/api';
+import { transactionsApi } from '../utils/api';
 import { getCurrentYearMonth } from '../utils/format';
 
 interface TransactionContextType {
@@ -61,25 +61,14 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      // Try to fetch from API first
-      let data: Transaction[] = [];
-
-      try {
-        // Try to get data from API
-        data = await transactionsApi.getAll(year, month);
-        console.log('API data fetched successfully:', data);
-      } catch (apiError) {
-        // If API fails, fallback to mock data
-        console.warn('API fetch failed, using mock data:', apiError);
-        data = mockTransactions;
-      }
-
+      // Call the API to fetch transactions
+      const data = await transactionsApi.getAll(year, month);
+      console.log('Transactions fetched successfully:', data);
       setTransactions(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch transactions');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch transactions';
+      setError(errorMessage);
       console.error('Error in refreshTransactions:', err);
-      // Fallback to mock data on any error
-      setTransactions(mockTransactions);
     } finally {
       setLoading(false);
     }
@@ -88,24 +77,12 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   // Add new transaction
   const addTransaction = async (transaction: Transaction) => {
     try {
-      let newTransaction: Transaction;
-
-      try {
-        // Try to add via API
-        newTransaction = await transactionsApi.add(transaction);
-      } catch (apiError) {
-        console.warn('API add failed, using mock data:', apiError);
-        // For development - mimic API behavior if API fails
-        newTransaction = {
-          ...transaction,
-          id: Math.floor(Math.random() * 10000),
-        };
-      }
-
+      const newTransaction = await transactionsApi.add(transaction);
       setTransactions(prev => [...prev, newTransaction]);
       return Promise.resolve();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add transaction');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add transaction';
+      setError(errorMessage);
       return Promise.reject(err);
     }
   };
@@ -113,20 +90,14 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   // Update transaction
   const updateTransaction = async (transaction: Transaction) => {
     try {
-      try {
-        // Try to update via API
-        await transactionsApi.update(transaction);
-      } catch (apiError) {
-        console.warn('API update failed:', apiError);
-        // Continue with local update even if API fails
-      }
-
+      const updatedTransaction = await transactionsApi.update(transaction);
       setTransactions(prev =>
-          prev.map(t => (t.id === transaction.id ? transaction : t))
+          prev.map(t => (t.id === transaction.id ? updatedTransaction : t))
       );
       return Promise.resolve();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update transaction');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update transaction';
+      setError(errorMessage);
       return Promise.reject(err);
     }
   };
@@ -134,18 +105,12 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   // Delete transaction
   const deleteTransaction = async (id: number) => {
     try {
-      try {
-        // Try to delete via API
-        await transactionsApi.delete(id);
-      } catch (apiError) {
-        console.warn('API delete failed:', apiError);
-        // Continue with local delete even if API fails
-      }
-
+      await transactionsApi.delete(id);
       setTransactions(prev => prev.filter(t => t.id !== id));
       return Promise.resolve();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete transaction');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete transaction';
+      setError(errorMessage);
       return Promise.reject(err);
     }
   };
