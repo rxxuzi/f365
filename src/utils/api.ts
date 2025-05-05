@@ -1,7 +1,7 @@
-import { Transaction, SavingsGoal, InvestmentAsset } from '../types';
+import { Transaction, SavingsGoal } from '../types';
 
 // Base API URL - configurable for different environments
-const API_BASE_URL = 'https://x.rxxuzi.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://x.rxxuzi.com/api';
 
 // API endpoints for different resources
 const API_ENDPOINTS = {
@@ -11,7 +11,7 @@ const API_ENDPOINTS = {
 };
 
 // Use mocks only as fallback when API fails
-const FALLBACK_TO_MOCKS = true;
+const FALLBACK_TO_MOCKS = import.meta.env.VITE_FALLBACK_TO_MOCKS !== 'false';
 
 // Add more logging for debugging
 const logApiRequest = (method: string, url: string, body?: any) => {
@@ -59,7 +59,20 @@ export const transactionsApi = {
     try {
       const response = await fetch(url);
       const data = await handleResponse(response);
-      return data.transactions || [];
+
+      // Map API response to our application's Transaction type
+      if (data.transactions && Array.isArray(data.transactions)) {
+        return data.transactions.map((item: any) => ({
+          id: item.id,
+          amount: Math.abs(item.amount), // Always store as positive
+          category: item.category,
+          date: item.date,
+          memo: item.memo || '',
+          type: item.amount < 0 ? 'expense' : 'income' // Determine type from amount sign
+        }));
+      }
+
+      return [];
     } catch (error) {
       console.error('❌ Failed to fetch transactions:', error);
 
@@ -299,54 +312,15 @@ export const usersApi = {
 
 // For mock data during development
 export const mockTransactions: Transaction[] = [
+  // April transactions
   {
     id: 1,
-    amount: 280000,
+    amount: 450000,
     category: '給料',
-    date: '2025-04-05',
+    date: '2025-04-25',
     memo: '4月分給料',
     type: 'income'
-  },
-  {
-    id: 2,
-    amount: 158199,
-    category: '副業',
-    date: '2025-04-15',
-    memo: 'フリーランス案件',
-    type: 'income'
-  },
-  {
-    id: 3,
-    amount: 126000,
-    category: '家賃',
-    date: '2025-04-02',
-    memo: '4月分家賃',
-    type: 'expense'
-  },
-  {
-    id: 4,
-    amount: 45800,
-    category: '食費',
-    date: '2025-04-18',
-    memo: '月の食費',
-    type: 'expense'
-  },
-  {
-    id: 5,
-    amount: 32500,
-    category: '光熱費',
-    date: '2025-04-10',
-    memo: '電気・ガス・水道',
-    type: 'expense'
-  },
-  {
-    id: 6,
-    amount: 24257,
-    category: '交通費',
-    date: '2025-04-22',
-    memo: '電車・バス',
-    type: 'expense'
-  },
+  }
 ];
 
 export const mockSavingsGoals = [

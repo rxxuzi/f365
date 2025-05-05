@@ -35,6 +35,15 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
 
   // Calculate summary from transactions
   useEffect(() => {
+    if (transactions.length === 0) {
+      setSummary({
+        income: 0,
+        expense: 0,
+        balance: 0,
+      });
+      return;
+    }
+
     const income = transactions
         .filter(t => t.type === 'income')
         .reduce((sum, t) => sum + t.amount, 0);
@@ -64,7 +73,21 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
       // Call the API to fetch transactions
       const data = await transactionsApi.getAll(year, month);
       console.log('Transactions fetched successfully:', data);
-      setTransactions(data);
+
+      // If API doesn't filter by month (since we're using mock data), filter locally
+      let filteredData = data;
+
+      if (year && month) {
+        const yearStr = year.toString();
+        const monthStr = month.toString().padStart(2, '0');
+        const datePrefix = `${yearStr}-${monthStr}`;
+
+        filteredData = data.filter(transaction =>
+            transaction.date.startsWith(datePrefix)
+        );
+      }
+
+      setTransactions(filteredData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch transactions';
       setError(errorMessage);
@@ -78,7 +101,16 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   const addTransaction = async (transaction: Transaction) => {
     try {
       const newTransaction = await transactionsApi.add(transaction);
-      setTransactions(prev => [...prev, newTransaction]);
+
+      // Check if the new transaction belongs to the current month/year
+      const transactionDate = new Date(newTransaction.date);
+      const transactionMonth = transactionDate.getMonth() + 1;
+      const transactionYear = transactionDate.getFullYear();
+
+      if (transactionYear === currentYear && transactionMonth === currentMonth) {
+        setTransactions(prev => [...prev, newTransaction]);
+      }
+
       return Promise.resolve();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to add transaction';
@@ -91,9 +123,24 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
   const updateTransaction = async (transaction: Transaction) => {
     try {
       const updatedTransaction = await transactionsApi.update(transaction);
-      setTransactions(prev =>
-          prev.map(t => (t.id === transaction.id ? updatedTransaction : t))
-      );
+
+      // Check if the transaction date changed and if it still belongs to current month/year
+      const transactionDate = new Date(updatedTransaction.date);
+      const transactionMonth = transactionDate.getMonth() + 1;
+      const transactionYear = transactionDate.getFullYear();
+
+      if (transactionYear === currentYear && transactionMonth === currentMonth) {
+        // Update if it belongs to current month/year
+        setTransactions(prev =>
+            prev.map(t => (t.id === transaction.id ? updatedTransaction : t))
+        );
+      } else {
+        // Remove from current view if it no longer belongs to current month/year
+        setTransactions(prev =>
+            prev.filter(t => t.id !== transaction.id)
+        );
+      }
+
       return Promise.resolve();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update transaction';
