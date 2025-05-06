@@ -167,7 +167,6 @@ export default function Settings() {
               <div className="space-y-2 mb-4">
                 <p><span className="text-muted">ユーザー名:</span> {userProfile.username}</p>
                 <p><span className="text-muted">メール:</span> {userProfile.email}</p>
-                <p><span className="text-muted">名前:</span> {userProfile.name}</p>
               </div>
             </div>
         )}
