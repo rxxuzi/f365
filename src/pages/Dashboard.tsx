@@ -22,8 +22,9 @@ import {
   Filler,
   ArcElement,
 } from 'chart.js';
-import { Line, Doughnut } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import { cn } from '../utils/cn';
+import Meter from '../components/Meter'; // Import the new Meter component
 
 ChartJS.register(
     CategoryScale,
@@ -129,10 +130,10 @@ export default function Dashboard() {
         display: false,
       },
       tooltip: {
-        mode: 'index' as const,
+        mode: 'index',
         intersect: false,
         callbacks: {
-          label: function(context: any) {
+          label: function(context) {
             return `¥${formatCurrency(context.parsed.y)}`;
           }
         }
@@ -142,7 +143,7 @@ export default function Dashboard() {
       y: {
         beginAtZero: false,
         ticks: {
-          callback: function(value: any) {
+          callback: function(value) {
             return `¥${formatCurrency(value)}`;
           }
         },
@@ -158,63 +159,32 @@ export default function Dashboard() {
     },
   };
 
-  // Create the savings rate meter
+  // Get message based on savings rate
+  const getSavingsRateMessage = (rate) => {
+    if (rate >= 20) {
+      return '素晴らしい！この調子で貯蓄を続けましょう。';
+    } else if (rate > 0) {
+      return '良い調子です。支出を抑えて貯蓄率を高めましょう。';
+    } else {
+      return '収支がマイナスです。支出を見直しましょう。';
+    }
+  };
+
+  // Get color based on savings rate
   const getSavingsRateColor = (rate: number) => {
-    if (rate < 0) return '#EF4444'; // Red for negative
-    if (rate < 10) return '#F59E0B'; // Orange for low
-    if (rate < 20) return '#10B981'; // Green for good
-    return '#3B82F6'; // Blue for excellent
+    if (rate < 0) return '#E85C5C';
+    if (rate < 15) return '#F5A623';
+    if (rate < 30) return '#A5D45F';
+    return '#27AC70'; // Green for excellent
   };
 
   const getSavingsRateLabel = (rate: number) => {
     if (rate < 0) return '赤字';
-    if (rate < 10) return '低貯蓄';
-    if (rate < 20) return '貯蓄中';
-    if (rate < 30) return '高貯蓄';
-    return '優秀';
+    if (rate < 15) return '低貯蓄';
+    if (rate < 30) return '中貯蓄';
+    return '高貯蓄';
   };
 
-  // Savings meter data
-  const meterData = {
-    labels: ['赤字', '低貯蓄', '貯蓄中', '高貯蓄', '優秀'],
-    datasets: [
-      {
-        data: [20, 20, 20, 20, 20], // Equal segments
-        backgroundColor: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'],
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  const meterOptions = {
-    cutout: '75%',
-    circumference: 180,
-    rotation: 270,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        enabled: false,
-      },
-    },
-    elements: {
-      arc: {
-        borderWidth: 0,
-      },
-    },
-    responsive: true,
-    maintainAspectRatio: false,
-  };
-
-  // Calculate needle rotation based on savings rate
-  // Convert savings rate to a position on the meter (0-100% -> 0-180 degrees)
-  const getNeedleRotation = (rate: number) => {
-    // Limit the rate between -10 and 40 for display purposes
-    const limitedRate = Math.max(-10, Math.min(40, rate));
-    // Map from -10 to 40 range to 0 to 180 degrees
-    return ((limitedRate + 10) / 50) * 180;
-  };
 
   return (
       <div className="space-y-8 animate-in">
@@ -276,7 +246,7 @@ export default function Dashboard() {
                           : "bg-input hover:bg-border"
                   )}
               >
-                <span className="text-primary font-medium">総貯蓄</span>
+                総貯蓄
               </button>
               <button
                   onClick={() => setActiveTab('trends')}
@@ -295,114 +265,77 @@ export default function Dashboard() {
           {/* Summary Tab - Financial Health Overview */}
           {activeTab === 'summary' && (
               <div className="space-y-6">
-                {/* Savings Rate Meter */}
-                <div className="card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-center">今月の貯蓄率</h3>
+                {/* Modified layout: Grid for Savings Rate and Monthly Stats side-by-side on desktop */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Savings Rate Meter - Updated to use the new Meter component */}
+                  <div className="card p-6">
+                    <Meter
+                        value={savingsRate}
+                        title="今月の貯蓄率"
+                        subtitle={getSavingsRateMessage(savingsRate)}
+                    />
+                  </div>
 
-                  <div className="relative h-44">
-                    {/* Gauge chart */}
-                    <div className="h-44">
-                      <Doughnut data={meterData} options={meterOptions as any} />
-                    </div>
-
-                    {/* Needle */}
-                    <div
-                        className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center"
-                        style={{
-                          transform: `rotate(${getNeedleRotation(savingsRate)}deg)`,
-                          transformOrigin: 'center bottom'
-                        }}
-                    >
-                      <div className="w-1 h-32 bg-foreground rounded-t-full relative bottom-6"></div>
-                    </div>
-
-                    {/* Center circle and value */}
-                    <div className="absolute top-1/2 left-0 right-0 flex flex-col items-center">
-                      <div className="text-3xl font-bold" style={{ color: getSavingsRateColor(savingsRate) }}>
-                        {savingsRate}%
-                      </div>
-                      <div className="text-sm font-medium" style={{ color: getSavingsRateColor(savingsRate) }}>
+                  {/* Monthly Stats - Now side-by-side with Meter on desktop */}
+                  <div className="card">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold">今月の状況</h3>
+                      <div
+                          className="text-sm px-3 py-1 rounded-full"
+                          style={{
+                            backgroundColor: `${getSavingsRateColor(savingsRate)}20`,
+                            color: getSavingsRateColor(savingsRate)
+                          }}
+                      >
                         {getSavingsRateLabel(savingsRate)}
                       </div>
                     </div>
 
-                    {/* Labels */}
-                    <div className="absolute top-36 left-0 right-0 flex justify-between px-4">
-                      <span className="text-xs text-muted">&lt;0%</span>
-                      <span className="text-xs text-muted">30%&gt;</span>
-                    </div>
-                  </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="bg-input rounded-lg p-4">
+                        <div className="flex items-center mb-2">
+                          <Wallet className="w-5 h-5 text-muted mr-2" />
+                          <span className="text-muted">収支比率</span>
+                        </div>
+                        <div className="text-xl font-semibold">
+                          {summary.income > 0
+                              ? (summary.expense / summary.income * 100).toFixed(0)
+                              : 0}%
+                        </div>
+                        <p className="text-xs text-muted mt-1">
+                          {summary.income > summary.expense
+                              ? '収入が支出を上回っています'
+                              : '支出が収入を上回っています'}
+                        </p>
+                      </div>
 
-                  <div className="mt-4 text-center text-sm text-muted">
-                    {savingsRate >= 20 ? (
-                        '素晴らしい！この調子で貯蓄を続けましょう。'
-                    ) : savingsRate > 0 ? (
-                        '良い調子です。支出を抑えて貯蓄率を高めましょう。'
-                    ) : (
-                        '収支がマイナスです。支出を見直しましょう。'
-                    )}
-                  </div>
-                </div>
+                      <div className="bg-input rounded-lg p-4">
+                        <div className="flex items-center mb-2">
+                          <Calendar className="w-5 h-5 text-muted mr-2" />
+                          <span className="text-muted">今月</span>
+                        </div>
+                        <div className="text-xl font-semibold">
+                          {currentYear}年{currentMonth}月
+                        </div>
+                        <p className="text-xs text-muted mt-1">
+                          {transactions.length}件の取引
+                        </p>
+                      </div>
 
-                {/* Monthly Stats */}
-                <div className="card">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">今月の状況</h3>
-                    <div
-                        className="text-sm px-3 py-1 rounded-full"
-                        style={{
-                          backgroundColor: `${getSavingsRateColor(savingsRate)}20`,
-                          color: getSavingsRateColor(savingsRate)
-                        }}
-                    >
-                      {getSavingsRateLabel(savingsRate)}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-input rounded-lg p-4">
-                      <div className="flex items-center mb-2">
-                        <Wallet className="w-5 h-5 text-muted mr-2" />
-                        <span className="text-muted">収支比率</span>
+                      <div className="bg-input rounded-lg p-4">
+                        <div className="flex items-center mb-2">
+                          <PiggyBank className="w-5 h-5 text-muted mr-2" />
+                          <span className="text-muted">今月の貯蓄</span>
+                        </div>
+                        <div className="text-xl font-semibold">
+                          ¥{formatCurrency(Math.max(0, summary.income - summary.expense))}
+                        </div>
+                        <p className="text-xs text-muted mt-1">
+                          {summary.income > summary.expense
+                              ? `目標の${((summary.income - summary.expense) / (savingsGoal - totalSavings) * 100).toFixed(1)}%達成`
+                              : '今月は貯蓄がありません'}
+                        </p>
                       </div>
-                      <div className="text-xl font-semibold">
-                        {summary.income > 0
-                            ? (summary.expense / summary.income * 100).toFixed(0)
-                            : 0}%
-                      </div>
-                      <p className="text-xs text-muted mt-1">
-                        {summary.income > summary.expense
-                            ? '収入が支出を上回っています'
-                            : '支出が収入を上回っています'}
-                      </p>
-                    </div>
-
-                    <div className="bg-input rounded-lg p-4">
-                      <div className="flex items-center mb-2">
-                        <Calendar className="w-5 h-5 text-muted mr-2" />
-                        <span className="text-muted">今月</span>
-                      </div>
-                      <div className="text-xl font-semibold">
-                        {currentYear}年{currentMonth}月
-                      </div>
-                      <p className="text-xs text-muted mt-1">
-                        {transactions.length}件の取引
-                      </p>
-                    </div>
-
-                    <div className="bg-input rounded-lg p-4">
-                      <div className="flex items-center mb-2">
-                        <PiggyBank className="w-5 h-5 text-muted mr-2" />
-                        <span className="text-muted">今月の貯蓄</span>
-                      </div>
-                      <div className="text-xl font-semibold">
-                        ¥{formatCurrency(Math.max(0, summary.income - summary.expense))}
-                      </div>
-                      <p className="text-xs text-muted mt-1">
-                        {summary.income > summary.expense
-                            ? `目標の${((summary.income - summary.expense) / (savingsGoal - totalSavings) * 100).toFixed(1)}%達成`
-                            : '今月は貯蓄がありません'}
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -461,8 +394,8 @@ export default function Dashboard() {
           {activeTab === 'savings' && (
               <div className="card p-6">
                 <div className="text-center mb-6">
-                  <h2 className="text-3xl font-bold mb-2">
-                    <span className="text-primary">総貯蓄額：</span>¥ {formatCurrency(totalSavings)}
+                  <h2 className="text-3xl font-bold mb-2 text-primary">
+                    <span>総貯蓄額：</span>¥ {formatCurrency(totalSavings)}
                   </h2>
                   <p className="text-muted">目標: ¥{formatCurrency(savingsGoal)}</p>
                 </div>
@@ -554,7 +487,7 @@ export default function Dashboard() {
                 {transactionHistory.dates.length > 0 ? (
                     <>
                       <div className="h-64 mb-6">
-                        <Line data={balanceData} options={chartOptions as any} />
+                        <Line data={balanceData} options={chartOptions} />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

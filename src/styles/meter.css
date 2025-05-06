@@ -1,0 +1,36 @@
+/* Meter Component Styles */
+.meter-container {
+    position: relative;
+    width: 100%;
+    max-width: 328px;
+    margin: 0 auto;
+}
+
+.meter-needle {
+    position: absolute;
+    left: 45%;
+    top: 24%;
+    transform-origin: 50% calc(100% - 15px);
+    transition: transform 1.5s ease-in-out;
+}
+
+.meter-value {
+    text-align: center;
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.meter-label {
+    text-align: center;
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.meter-message {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+}
